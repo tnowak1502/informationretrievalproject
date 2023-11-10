@@ -69,7 +69,6 @@ def NRA_algo(query_terms, inverted_index, k):
 def OkapiBm25(query_terms, documents, inverted_index, k, k1=1.2, k3=1.2, b=0.75):
     # Initialize document scores
     doc_scores = {doc_id: 0.0 for doc_id in range(len(documents))}
-
     # Calculate average document length
     avg_doc_length = 0
 
@@ -91,11 +90,27 @@ def OkapiBm25(query_terms, documents, inverted_index, k, k1=1.2, k3=1.2, b=0.75)
 
     # Rank documents by their scores
     sorted_documents = sorted(doc_scores.items(), key=lambda x: x[1], reverse=True)
-
     # Get the top-k documents
     top_k_documents = sorted_documents[:k]
     return top_k_documents
 
+def MixtureModel(query_terms, documents, inverted_index, k, lmb=0.5):
+    doc_scores = {doc_id: 0.0 for doc_id in range(len(documents))}
+    no_of_terms = 0
+    for idx in inverted_index.keys():
+        no_of_terms += sum(doc_length for _, _, doc_length, _ in inverted_index[idx])
+
+    for query_term, score in query_terms:
+        if query_term in inverted_index:
+            cf = sum(doc_term_count for _, doc_term_count, _, _ in inverted_index[query_term])
+            for doc_id, doc_term_count, doc_length, _ in inverted_index[query_term]:
+                doc_scores[doc_id] += lmb*doc_term_count/doc_length+(1-lmb)*cf/no_of_terms
+
+    # Rank documents by their scores
+    sorted_documents = sorted(doc_scores.items(), key=lambda x: x[1], reverse=True)
+    # Get the top-k documents
+    top_k_documents = sorted_documents[:k]
+    return top_k_documents
 
 documents = pd.read_csv("video_games.txt", sep=",")
 documents["both"] = documents["Title"] + " " + documents["Sections"]
@@ -122,7 +137,7 @@ stemmer = PorterStemmer()
 with open("inverted_index_titles.pkl", "rb") as fp:
     inverted_index = pickle.load(fp)
 
-query = documents[5384]
+query = documents[1000]
 query = query.replace("[", "")
 query = query.replace("]", "")
 query = query.replace("\"", "")
@@ -158,7 +173,8 @@ top_10_query_terms = sorted_query_terms[:15]
 print(top_10_query_terms)
 
 
-top_k_documents = OkapiBm25(top_10_query_terms, documents, inverted_index, k=15)
+#top_k_documents = OkapiBm25(top_10_query_terms, documents, inverted_index, k=15, k1=1.5, k3=1.0, b=0.75)
+top_k_documents = MixtureModel(top_10_query_terms, documents, inverted_index, k=15, lmb=0.01)
 i = 1
 for doc_id, score in top_k_documents:
     print(f"{i}.: Document {doc_id}: {documents[doc_id][:300]} (Score: {score:.2f})")

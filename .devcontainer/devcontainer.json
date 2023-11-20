@@ -1,0 +1,9 @@
+{
+    "image" : "coady/pylucene",
+
+    "customizations": {
+        "vscode": {
+          "extensions": ["ms-python.python"]
+        }
+      }
+}

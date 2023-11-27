@@ -137,7 +137,7 @@ stemmer = PorterStemmer()
 with open("inverted_index_titles.pkl", "rb") as fp:
     inverted_index = pickle.load(fp)
 
-query = documents[1000]
+query = documents[1648]
 query = query.replace("[", "")
 query = query.replace("]", "")
 query = query.replace("\"", "")
@@ -164,7 +164,7 @@ for query_term, count in Counter(query_terms).items():
     query_term = str(query_term)
     #print(query_term)
     try:
-        query_tf_idf[query_term] = count/np.max(qt_count) * math.log(len(documents) / (len(inverted_index[query_term])))
+        query_tf_idf[query_term] = count*0.5/np.max(qt_count) * math.log(len(documents) / (len(inverted_index[query_term])))
     except KeyError:
         print("KeyError:", query_term)
         continue
@@ -173,8 +173,8 @@ top_10_query_terms = sorted_query_terms[:15]
 print(top_10_query_terms)
 
 
-#top_k_documents = OkapiBm25(top_10_query_terms, documents, inverted_index, k=15, k1=1.5, k3=1.0, b=0.75)
-top_k_documents = MixtureModel(top_10_query_terms, documents, inverted_index, k=15, lmb=0.01)
+top_k_documents = OkapiBm25(top_10_query_terms, documents, inverted_index, k=20, k1=1.5, k3=1.0, b=0.75)
+#top_k_documents = MixtureModel(top_10_query_terms, documents, inverted_index, k=15, lmb=0.75)
 i = 1
 for doc_id, score in top_k_documents:
     print(f"{i}.: Document {doc_id}: {documents[doc_id][:300]} (Score: {score:.2f})")

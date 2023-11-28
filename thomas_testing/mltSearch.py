@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-INDEX_DIR = "IndexFilesSingles.index"
+INDEX_DIR = "IndexFiles.index"
 
 import sys, os, lucene
 

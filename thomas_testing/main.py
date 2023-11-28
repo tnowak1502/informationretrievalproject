@@ -5,7 +5,9 @@ from collections import Counter
 import math
 import pickle
 import json
+import nltk
 from nltk.corpus import stopwords
+nltk.download("stopwords")
 from nltk.stem import PorterStemmer
 from nltk import ngrams
 
@@ -115,6 +117,9 @@ def MixtureModel(query_terms, documents, inverted_index, k, lmb=0.5):
 documents = pd.read_csv("video_games.txt", sep=",")
 documents["both"] = documents["Title"] + " " + documents["Sections"]
 documents = documents["both"]
+print()
+print("LEN DOCS", len(documents))
+print()
 for i in range(len(documents)):
     documents[i] = documents[i].replace("[", "")
     documents[i] = documents[i].replace("]", "")

@@ -41,8 +41,8 @@ def run(searcher, analyzer, reader):
         print()
         print("Searching for:", command)
         query = QueryParser("contents", analyzer).parse(command)
-        scoreDocs = searcher.search(query, 3).scoreDocs
-        print("%s total matching documents." % len(scoreDocs))
+        scoreDocs = searcher.search(query, 1).scoreDocs
+        #print("%s total matching documents." % len(scoreDocs))
 
         for scoreDoc in scoreDocs:
             doc = searcher.doc(scoreDoc.doc)
@@ -50,7 +50,7 @@ def run(searcher, analyzer, reader):
             print('title:', doc.get("title"), ", id:", scoreDoc.doc)
             mltq = mlt.like(scoreDoc.doc)
             print("query:", mltq)
-            likeDocs = searcher.search(mltq, 3).scoreDocs
+            likeDocs = searcher.search(mltq, 50).scoreDocs
             print("Like docs:")
             for likeDoc in likeDocs:
                 doc = searcher.doc(likeDoc.doc)

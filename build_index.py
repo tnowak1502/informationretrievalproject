@@ -2,12 +2,12 @@ import lucene
 
 from org.apache.lucene.store import FSDirectory
 from org.apache.lucene.index import IndexWriter, IndexWriterConfig
-from org.apache.lucene.analysis.standard import StandardAnalyzer
+from org.apache.lucene.analysis.en import EnglishAnalyzer
 from org.apache.lucene.document import Document, Field, FieldType
 from java.nio.file import Paths
 
 def create_index(documents, index_path):
-    analyzer = StandardAnalyzer()
+    analyzer = EnglishAnalyzer()
     index_config = IndexWriterConfig(analyzer)
     index_directory = FSDirectory.open(Paths.get(index_path))
 
@@ -56,4 +56,4 @@ if __name__ == "__main__":
         document["content"] = prune_unwanted(reader["Sections"][i])
         documents.append(document)
 
-    create_index(documents, "test_index")
+    create_index(documents, "index")

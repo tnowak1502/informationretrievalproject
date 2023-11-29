@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-INDEX_DIR = "IndexFiles.index"
-#INDEX_DIR = "IndexFilesShingles.index"
+#INDEX_DIR = "IndexFiles.index"
+INDEX_DIR = "IndexFilesTermVectors.index"
+#INDEX_DIR = "IndexFilesShingles7.index"
 
 import sys, os, lucene, threading, time
 from datetime import datetime
@@ -46,7 +47,7 @@ class IndexFiles(object):
 
         store = NIOFSDirectory(Paths.get(storeDir))
         analyzer = LimitTokenCountAnalyzer(analyzer, 1048576)
-        #analyzer = ShingleAnalyzerWrapper(analyzer, 3)
+        analyzer = ShingleAnalyzerWrapper(analyzer, 7)
         config = IndexWriterConfig(analyzer)
         config.setOpenMode(IndexWriterConfig.OpenMode.CREATE)
         writer = IndexWriter(store, config)
@@ -71,6 +72,7 @@ class IndexFiles(object):
         t2.setStored(True)
         t2.setTokenized(True)
         t2.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS)
+        t2.setStoreTermVectors(True)
 
         documents = pd.read_csv(root, sep=",")
 

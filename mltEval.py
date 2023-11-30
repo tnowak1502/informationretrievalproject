@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-INDEX_DIR = "IndexFilesTermVectors.index"
+#INDEX_DIR = "IndexFilesTermVectors.index"
 #INDEX_DIR = "IndexFiles.index"
 #INDEX_DIR = "IndexFilesShingles.index"
+INDEX_DIR = "index.index"
 
 import sys, os, lucene
 
 from java.nio.file import Paths
 from org.apache.lucene.analysis.en import EnglishAnalyzer
-from org.apache.lucene.analysis.miscellaneous import LimitTokenCountAnalyzer
 from org.apache.lucene.analysis.shingle import ShingleAnalyzerWrapper
 from org.apache.lucene.index import DirectoryReader, IndexReader, Term
 from org.apache.lucene.queryparser.classic import QueryParser
@@ -29,6 +29,7 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from collections import Counter
 import time
+from mltSearch import mltByHand
 
 groundtruth = json.load(open("groundtruth.json","r"))
 #with open("inverted_index_titles.pkl", "rb") as fp:
@@ -45,68 +46,6 @@ search query entered against the 'contents' field.  It will then display the
 search.close() is currently commented out because it causes a stack overflow in
 some cases.
 """
-def mltByHand(docId, analyzer, reader):
-    start = time.time()
-
-    doc = reader.storedFields().document(docId)
-    contents = doc.get("contents")
-    ts = analyzer.tokenStream("contents", contents)
-    qt_count_doc = {}
-    termAtt = ts.addAttribute(CharTermAttribute.class_)
-    freqAtt = ts.addAttribute(TermFrequencyAttribute.class_)
-    ts.reset()
-    while(ts.incrementToken()):
-        term = termAtt.toString()
-        if term in EnglishAnalyzer.ENGLISH_STOP_WORDS_SET:
-            continue
-        freq = freqAtt.getTermFrequency()
-        if qt_count_doc.get(term) is None:
-            qt_count_doc[term] = freq
-        else:
-            qt_count_doc[term] += freq
-    ts.close()
-
-    # qt_count_doc = {}
-    # qt_count_index = {}
-    # terms = reader.getTermVector(docId, "contents")
-    # termsEnum = terms.iterator()
-    # print(terms.hasPositions())
-    # while next(BytesRefIterator(termsEnum)) is not None:
-    #     term = termsEnum.term().utf8ToString()
-    #     qt_count_doc[term] = termsEnum.docFreq()
-    #     qt_count_index[term] = termsEnum.totalTermFreq()
-    end = time.time()
-    print("FIRST PART:", end - start)
-    start = time.time()
-    query_tf_idf = {}
-    maxCount = max(qt_count_doc.values())
-    for query_term, count in qt_count_doc.items():
-        # print(query_term)
-        try:
-            query_tf_idf[query_term] = 0
-            if len(query_term) < 9:
-                if count > 5:
-                    term_freq = reader.docFreq(Term("contents", query_term))#qt_count_index[query_term]
-                    if term_freq > 4:
-                        query_tf_idf[query_term] = count * 0.5 /maxCount * math.log(
-                            21228 / term_freq)
-        except KeyError:
-            print("KeyError:", query_term)
-            continue
-    end = time.time()
-    print("SECOND PART:", end-start)
-    start = time.time()
-    sorted_query_terms = sorted(query_tf_idf.items(), key=lambda x: x[1], reverse=True)
-    top_10_query_terms = sorted_query_terms[:25]
-    res = ""
-    for i in range(len(top_10_query_terms)):
-        qt = top_10_query_terms[i][0]
-        res += "contents:" + qt + " "
-    print("res:", res)
-    res = QueryParser("contents", analyzer).parse(res)
-    end = time.time()
-    print("THIRD PART:", end - start)
-    return res
 
 def run(searcher, analyzer, reader):
     mlt = MoreLikeThis(reader)
@@ -128,7 +67,7 @@ def run(searcher, analyzer, reader):
         print()
         command = game
         print("Searching for:", command)
-        query = QueryParser("contents", analyzer).parse(command)
+        query = QueryParser("content", analyzer).parse(command)
         scoreDocs = searcher.search(query, 5).scoreDocs
         #print("%s total matching documents." % len(scoreDocs))
         for scoreDoc in scoreDocs:
@@ -136,9 +75,9 @@ def run(searcher, analyzer, reader):
             if doc.get("title") == command:
                 print('title:', doc.get("title"), "| id:", scoreDoc.doc)
                 #mltq = mlt.like(scoreDoc.doc)
-                mltq = mltByHand(scoreDoc.doc, analyzer, reader)
+                mltq = mltByHand(scoreDoc.doc, analyzer, reader, 9, 5, 4)
                 print("query:\n", mltq)
-                likeDocs = searcher.search(mltq, 50).scoreDocs
+                likeDocs = searcher.search(mltq, 20).scoreDocs
                 print("Like docs:")
                 correct = 0
                 correctunder5 = 0

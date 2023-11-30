@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #INDEX_DIR = "IndexFiles.index"
-INDEX_DIR = "IndexFilesShingles.index"
+INDEX_DIR = "index.index"
 
 import sys, os, lucene
 
@@ -32,14 +32,14 @@ def run(searcher, analyzer):
             return
         print()
         print("Searching for:", command)
-        query = QueryParser("contents", analyzer).parse(command)
+        query = QueryParser("content", analyzer).parse(command)
         scoreDocs = searcher.search(query, 50).scoreDocs
         print("%s total matching documents." % len(scoreDocs))
 
         for scoreDoc in scoreDocs:
             doc = searcher.doc(scoreDoc.doc)
             fields = doc.getFields()
-            print('title:', doc.get("title"), ", id:", scoreDoc.doc, doc.get("contents")[:10])
+            print('title:', doc.get("title"), ", id:", scoreDoc.doc, doc.get("content")[:10])
 
 
 if __name__ == '__main__':

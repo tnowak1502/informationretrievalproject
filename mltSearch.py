@@ -51,6 +51,7 @@ def mltByHand(docId, analyzer, reader, maxLen, minDocFreq, minIndFreq):
     start = time.time()
     query_tf_idf = {}
     maxCount = max(qt_count_doc.values())
+    numDocs = reader.numDocs()
     for query_term, count in qt_count_doc.items():
         # print(query_term)
         try:
@@ -60,7 +61,7 @@ def mltByHand(docId, analyzer, reader, maxLen, minDocFreq, minIndFreq):
                     term_freq = reader.docFreq(Term("content", query_term))#qt_count_index[query_term]
                     if term_freq >= minIndFreq:
                         query_tf_idf[query_term] = count * 0.5 /maxCount * math.log(
-                            21228 / term_freq)
+                            numDocs / term_freq)
         except KeyError:
             print("KeyError:", query_term)
             continue
@@ -68,7 +69,7 @@ def mltByHand(docId, analyzer, reader, maxLen, minDocFreq, minIndFreq):
     #print("SECOND PART:", end-start)
     start = time.time()
     sorted_query_terms = sorted(query_tf_idf.items(), key=lambda x: x[1], reverse=True)
-    top_10_query_terms = sorted_query_terms[:25]
+    top_10_query_terms = sorted_query_terms[:20]
     res = ""
     for i in range(len(top_10_query_terms)):
         qt = top_10_query_terms[i][0]

@@ -1,7 +1,7 @@
 import lucene
 
 from org.apache.lucene.store import FSDirectory
-from org.apache.lucene.index import IndexWriter, IndexWriterConfig
+from org.apache.lucene.index import IndexWriter, IndexWriterConfig, IndexOptions
 from org.apache.lucene.analysis.en import EnglishAnalyzer
 from org.apache.lucene.document import Document, Field, FieldType
 from java.nio.file import Paths
@@ -29,6 +29,7 @@ def create_index(documents, index_path):
         add_document(writer, doc_id, document)
 
     # Close the IndexWriter to finalize the index
+    writer.commit()
     writer.close()
 
 def add_document(writer, doc_id, document):
@@ -50,7 +51,7 @@ def add_document(writer, doc_id, document):
     fieldtype = FieldType()
     fieldtype.setStored(True)
     fieldtype.setTokenized(True)
-
+    fieldtype.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS)
     # Add a field for the document ID
     doc.add(Field("doc_id", str(doc_id), fieldtype))
 
@@ -61,6 +62,7 @@ def add_document(writer, doc_id, document):
     doc.add(Field("content", document["content"], fieldtype))
 
     # Add the document to the index
+    print("Adding", document["title"])
     writer.addDocument(doc)
 
 if __name__ == "__main__":
@@ -83,4 +85,4 @@ if __name__ == "__main__":
         documents.append(document)
 
     # Add given collection of 'documents' to Lucene index at './index'
-    create_index(documents, "index")
+    create_index(documents, "index.index")

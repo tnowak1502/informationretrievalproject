@@ -23,8 +23,11 @@ def prune_unwanted(document):
     document = document.replace("-", " ")
     document = document.replace("(", "")
     document = document.replace(")", "")
-    document = document.replace(":", " ")
+    document = document.replace(":", "")
+    document = document.replace("&amp;", "and")
     document = document.replace(";", " ")
     document = document.replace("'s", "")
+    document = document.replace("&", "and")
+    document = document.replace("!", "")
 
     return document

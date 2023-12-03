@@ -13,8 +13,9 @@ from org.apache.lucene.store import MMapDirectory
 from org.apache.lucene.search import IndexSearcher
 from org.apache.lucene.search.similarities import BM25Similarity
 from org.apache.lucene.analysis.tokenattributes import CharTermAttribute, TermFrequencyAttribute
+from utils import prune_unwanted
 
-def mltByHand(docId, analyzer, reader, maxLen, minTf, minDocFreq):
+def mltByHand(docId, analyzer, reader, maxLen, minTf, minDocFreq, noOfTerms):
     """
     Extracts the terms with the highest tf-id-score from a given document and turns them into a query to be used for
     relevant document retrieval.
@@ -27,6 +28,7 @@ def mltByHand(docId, analyzer, reader, maxLen, minTf, minDocFreq):
     maxLen : tuning parameter to exclude terms that go over a certain length (to avoid terms that are extremely specific)
     minTf : The minimum amount of times a term needs to appear in the document to be taken into account during score calculation
     minDocFreq : The minimum amount of documents in the index a term needs to appear in to be taken into account during score calculation
+    noOfTerms : The number of query terms to extract
 
     Returns
     ----------
@@ -76,7 +78,7 @@ def mltByHand(docId, analyzer, reader, maxLen, minTf, minDocFreq):
 
     #retrieve the top 30 query terms and turn them into a concatenated query
     sorted_query_terms = sorted(query_tf_idf.items(), key=lambda x: x[1], reverse=True)
-    top_query_terms = sorted_query_terms[:30]
+    top_query_terms = sorted_query_terms[:noOfTerms]
     res = ""
     for i in range(len(top_query_terms)):
         qt = top_query_terms[i][0]
@@ -96,12 +98,12 @@ def run(searcher, analyzer, reader):
             return
         print()
         print("Searching for:", command)
-        query = QueryParser("content", analyzer).parse(command)
+        query = QueryParser("content", analyzer).parse(prune_unwanted(command))
         scoreDocs = searcher.search(query, 5).scoreDocs
         for i in range(len(scoreDocs)):
             scoreDoc = scoreDocs[i]
             doc = searcher.doc(scoreDoc.doc)
-            print(i+1, 'title:', doc.get("title"), "| id:", scoreDoc.doc)
+            print(i+1, 'title:', doc.get("title"), "| id:", scoreDoc.doc, "|", doc.get("content")[:50])
         print()
         print("Select document to find related documents for by typing its number")
         while True:
@@ -111,7 +113,7 @@ def run(searcher, analyzer, reader):
             else:
                 print()
                 break
-        mltq = mltByHand(scoreDocs[int(command)-1].doc, analyzer, reader, 9, 4, 2)
+        mltq = mltByHand(scoreDocs[int(command)-1].doc, analyzer, reader, 9, 4, 2, 60)
         #print("query:", mltq)
         likeDocs = searcher.search(mltq, 20).scoreDocs
         print("Relevant documents:")

@@ -81,7 +81,7 @@ if __name__ == "__main__":
     for i in range(len(reader)):
         document = dict()
         document["title"] = reader["Title"][i]
-        document["content"] = prune_unwanted(reader["Sections"][i])
+        document["content"] = prune_unwanted(reader["Title"][i] + " " + reader["Sections"][i])
         documents.append(document)
 
     # Add given collection of 'documents' to Lucene index at './index'

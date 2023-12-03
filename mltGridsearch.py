@@ -15,19 +15,8 @@ from org.apache.lucene.queryparser.classic import QueryParser
 from org.apache.lucene.store import MMapDirectory
 from org.apache.lucene.search import IndexSearcher
 from org.apache.lucene.search.similarities import BM25Similarity
-from org.apache.lucene.queries.mlt import MoreLikeThis
-from org.apache.lucene.util import BytesRefIterator
-from org.apache.lucene.analysis.tokenattributes import CharTermAttribute, TermFrequencyAttribute
-import pandas as pd
-import numpy as np
-import math
-import pickle
+from utils import prune_unwanted
 import json
-import nltk
-from nltk.corpus import stopwords
-#nltk.download("stopwords")
-from nltk.stem import PorterStemmer
-from collections import Counter
 import time
 from mltSearch import mltByHand
 
@@ -47,79 +36,89 @@ search.close() is currently commented out because it causes a stack overflow in
 some cases.
 """
 
-def run(searcher, analyzer, reader, maxLens, minTfs, minDocFreqs):
-    best_prec = {"maxLen": 0, "minTf": 0, "minDocFreq": 0, "val": 0}
-    best_rec = {"maxLen": 0, "minTf": 0, "minDocFreq": 0, "val": 0}
-    best_f1 = {"maxLen": 0, "minTf": 0, "minDocFreq": 0, "val": 0}
-    best_prec5 = {"maxLen": 0, "minTf": 0, "minDocFreq": 0, "val": 0}
+def run(searcher, analyzer, reader, maxLens, minTfs, minDocFreqs, noOfTermss):
+    best_prec = {"maxLen": 0, "minTf": 0, "minDocFreq": 0, "noOfTerms": 0, "val": 0}
+    best_rec = {"maxLen": 0, "minTf": 0, "minDocFreq": 0, "noOfTerms": 0, "val": 0}
+    best_f1 = {"maxLen": 0, "minTf": 0, "minDocFreq": 0, "noOfTerms": 0, "val": 0}
+    best_prec5 = {"maxLen": 0, "minTf": 0, "minDocFreq": 0, "noOfTerms": 0, "val": 0}
     for maxLen in maxLens:
         for minTf in minTfs:
             for minDocFreq in minDocFreqs:
-                print("maxLen:", maxLen, "minTf:", minTf, "minDocFreq:", minDocFreq)
-                totalTruth = 0
-                totalCorrect = 0
-                totalResults = 0
-                totalCorrectUnder5 = 0
-                for game in groundtruth.keys():
-                    truth = groundtruth[game]
-                    totalTruth += len(truth)
-                    command = game
-                    query = QueryParser("content", analyzer).parse(command)
-                    scoreDocs = searcher.search(query, 5).scoreDocs
-                    for scoreDoc in scoreDocs:
-                        doc = searcher.doc(scoreDoc.doc)
-                        if doc.get("title") == command:
-                            mltq = mltByHand(scoreDoc.doc, analyzer, reader, maxLen, minTf, minDocFreq)
-                            likeDocs = searcher.search(mltq, 20).scoreDocs
-                            correct = 0
-                            correctunder5 = 0
-                            counter = 0
-                            for likeDoc in likeDocs:
-                                doc = searcher.doc(likeDoc.doc)
-                                if doc.get("title") in truth:
-                                    correct += 1
-                                    if counter < 5:
-                                        correctunder5 += 1
-                                counter+=1
-                            prec = correct/len(likeDocs)
-                            rec = correct/len(truth)
-                            if prec+rec > 0:
-                                f1 = 2*(prec*rec)/(prec+rec)
-                            else:
-                                f1 = 0
-                            prec5 = correctunder5/5
-                            totalCorrect += correct
-                            totalCorrectUnder5 += correctunder5
-                            totalResults += len(likeDocs)
-                #print("Total correct results:", totalCorrect, "out of a possible", totalTruth, "and", totalResults, "results, with", totalCorrectUnder5, "in the top 5")
-                prec = totalCorrect/totalResults
-                rec = totalCorrect/totalTruth
-                prec5 = totalCorrectUnder5/(5*len(groundtruth.keys()))
-                if prec+rec > 0:
-                    f1 = 2*(prec*rec)/(prec+rec)
-                else:
-                    f1 = 0
-                if prec > best_prec["val"]:
-                    best_prec["val"] = prec
-                    best_prec["maxLen"] = maxLen
-                    best_prec["minTf"] = minTf
-                    best_prec["minDocFreq"] = minDocFreq
-                if rec > best_rec["val"]:
-                    best_rec["val"] = rec
-                    best_rec["maxLen"] = maxLen
-                    best_rec["minTf"] = minTf
-                    best_rec["minDocFreq"] = minDocFreq
-                if f1 > best_f1["val"]:
-                    best_f1["val"] = f1
-                    best_f1["maxLen"] = maxLen
-                    best_f1["minTf"] = minTf
-                    best_f1["minDocFreq"] = minDocFreq
-                if prec5 > best_prec5["val"]:
-                    best_prec5["val"] = prec5
-                    best_prec5["maxLen"] = maxLen
-                    best_prec5["minTf"] = minTf
-                    best_prec5["minDocFreq"] = minDocFreq
-                print("precision:", prec, "recall:", rec, "f1:", f1, "p@5:", prec5)
+                for noOfTerms in noOfTermss:
+                    print("maxLen:", maxLen, "minTf:", minTf, "minDocFreq:", minDocFreq, "noOfTerms:", noOfTerms)
+                    totalTruth = 0
+                    totalCorrect = 0
+                    totalResults = 0
+                    totalCorrectUnder5 = 0
+                    for game in groundtruth.keys():
+                        truth = groundtruth[game]
+                        game = prune_unwanted(game)
+                        totalTruth += len(truth)
+                        query = QueryParser("content", analyzer).parse(game)
+                        scoreDocs = searcher.search(query, 10).scoreDocs
+                        found = False
+                        for scoreDoc in scoreDocs:
+                            doc = searcher.doc(scoreDoc.doc)
+                            if prune_unwanted(doc.get("title")) == game:
+                                found = True
+                                mltq = mltByHand(scoreDoc.doc, analyzer, reader, maxLen, minTf, minDocFreq, noOfTerms)
+                                likeDocs = searcher.search(mltq, 20).scoreDocs
+                                correct = 0
+                                correctunder5 = 0
+                                counter = 0
+                                for likeDoc in likeDocs:
+                                    doc = searcher.doc(likeDoc.doc)
+                                    if doc.get("title") in truth:
+                                        correct += 1
+                                        if counter < 5:
+                                            correctunder5 += 1
+                                    counter+=1
+                                prec = correct/len(likeDocs)
+                                rec = correct/len(truth)
+                                if prec+rec > 0:
+                                    f1 = 2*(prec*rec)/(prec+rec)
+                                else:
+                                    f1 = 0
+                                prec5 = correctunder5/5
+                                totalCorrect += correct
+                                totalCorrectUnder5 += correctunder5
+                                totalResults += len(likeDocs)
+                                break
+                        if not found:
+                            print("Couldn't find", game)
+                    #print("Total correct results:", totalCorrect, "out of a possible", totalTruth, "and", totalResults, "results, with", totalCorrectUnder5, "in the top 5")
+                    prec = totalCorrect/totalResults
+                    rec = totalCorrect/totalTruth
+                    prec5 = totalCorrectUnder5/(5*len(groundtruth.keys()))
+                    if prec+rec > 0:
+                        f1 = 2*(prec*rec)/(prec+rec)
+                    else:
+                        f1 = 0
+                    if prec > best_prec["val"]:
+                        best_prec["val"] = prec
+                        best_prec["maxLen"] = maxLen
+                        best_prec["minTf"] = minTf
+                        best_prec["minDocFreq"] = minDocFreq
+                        best_prec["noOfTerms"] = noOfTerms
+                    if rec > best_rec["val"]:
+                        best_rec["val"] = rec
+                        best_rec["maxLen"] = maxLen
+                        best_rec["minTf"] = minTf
+                        best_rec["minDocFreq"] = minDocFreq
+                        best_rec["noOfTerms"] = noOfTerms
+                    if f1 > best_f1["val"]:
+                        best_f1["val"] = f1
+                        best_f1["maxLen"] = maxLen
+                        best_f1["minTf"] = minTf
+                        best_f1["minDocFreq"] = minDocFreq
+                        best_f1["noOfTerms"] = noOfTerms
+                    if prec5 > best_prec5["val"]:
+                        best_prec5["val"] = prec5
+                        best_prec5["maxLen"] = maxLen
+                        best_prec5["minTf"] = minTf
+                        best_prec5["minDocFreq"] = minDocFreq
+                        best_prec5["noOfTerms"] = noOfTerms
+                    print("precision:", prec, "recall:", rec, "f1:", f1, "p@5:", prec5)
     print("PRECISION", best_prec)
     print("RECALL", best_rec)
     print("F1", best_f1)
@@ -135,5 +134,5 @@ if __name__ == '__main__':
     searcher.setSimilarity(BM25Similarity())
     analyzer = EnglishAnalyzer()
     #analyzer = ShingleAnalyzerWrapper(analyzer, 3)
-    run(searcher, analyzer, reader, maxLens=[9], minTfs=[4], minDocFreqs=[2])
+    run(searcher, analyzer, reader, maxLens=[9], minTfs=[4], minDocFreqs=[2], noOfTermss = [50, 60, 70, 75])
     del searcher

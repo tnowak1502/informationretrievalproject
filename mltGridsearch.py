@@ -47,15 +47,15 @@ search.close() is currently commented out because it causes a stack overflow in
 some cases.
 """
 
-def run(searcher, analyzer, reader, maxLens, minDocFreqs, minTermFreqs):
-    best_prec = {"maxLen": 0, "minDocFreq": 0, "minTermFreq": 0, "val": 0}
-    best_rec = {"maxLen": 0, "minDocFreq": 0, "minTermFreq": 0, "val": 0}
-    best_f1 = {"maxLen": 0, "minDocFreq": 0, "minTermFreq": 0, "val": 0}
-    best_prec5 = {"maxLen": 0, "minDocFreq": 0, "minTermFreq": 0, "val": 0}
+def run(searcher, analyzer, reader, maxLens, minTfs, minDocFreqs):
+    best_prec = {"maxLen": 0, "minTf": 0, "minDocFreq": 0, "val": 0}
+    best_rec = {"maxLen": 0, "minTf": 0, "minDocFreq": 0, "val": 0}
+    best_f1 = {"maxLen": 0, "minTf": 0, "minDocFreq": 0, "val": 0}
+    best_prec5 = {"maxLen": 0, "minTf": 0, "minDocFreq": 0, "val": 0}
     for maxLen in maxLens:
-        for minDocFreq in minDocFreqs:
-            for minTermFreq in minTermFreqs:
-                print("maxLen:", maxLen, "minDocFreq:", minDocFreq, "minTermFreq:", minTermFreq)
+        for minTf in minTfs:
+            for minDocFreq in minDocFreqs:
+                print("maxLen:", maxLen, "minTf:", minTf, "minDocFreq:", minDocFreq)
                 totalTruth = 0
                 totalCorrect = 0
                 totalResults = 0
@@ -63,21 +63,14 @@ def run(searcher, analyzer, reader, maxLens, minDocFreqs, minTermFreqs):
                 for game in groundtruth.keys():
                     truth = groundtruth[game]
                     totalTruth += len(truth)
-                    #print()
                     command = game
-                    #print("Searching for:", command)
                     query = QueryParser("content", analyzer).parse(command)
                     scoreDocs = searcher.search(query, 5).scoreDocs
-                    #print("%s total matching documents." % len(scoreDocs))
                     for scoreDoc in scoreDocs:
                         doc = searcher.doc(scoreDoc.doc)
                         if doc.get("title") == command:
-                            #print('title:', doc.get("title"), "| id:", scoreDoc.doc)
-                            #mltq = mlt.like(scoreDoc.doc)
-                            mltq = mltByHand(scoreDoc.doc, analyzer, reader, maxLen, minDocFreq, minTermFreq)
-                            #print("query:\n", mltq)
+                            mltq = mltByHand(scoreDoc.doc, analyzer, reader, maxLen, minTf, minDocFreq)
                             likeDocs = searcher.search(mltq, 20).scoreDocs
-                            #print("Like docs:")
                             correct = 0
                             correctunder5 = 0
                             counter = 0
@@ -87,9 +80,7 @@ def run(searcher, analyzer, reader, maxLens, minDocFreqs, minTermFreqs):
                                     correct += 1
                                     if counter < 5:
                                         correctunder5 += 1
-                                #print('     title:', doc.get("title"), "| id:", likeDoc.doc)
                                 counter+=1
-                            #print("     correct:", correct, "out of", len(likeDocs), "results and", len(truth), "true answers, with", correctunder5, "in the top 5")
                             prec = correct/len(likeDocs)
                             rec = correct/len(truth)
                             if prec+rec > 0:
@@ -97,7 +88,6 @@ def run(searcher, analyzer, reader, maxLens, minDocFreqs, minTermFreqs):
                             else:
                                 f1 = 0
                             prec5 = correctunder5/5
-                            #print("     precision:", prec, "recall:", rec, "f1:", f1, "p@5:", prec5)
                             totalCorrect += correct
                             totalCorrectUnder5 += correctunder5
                             totalResults += len(likeDocs)
@@ -112,28 +102,28 @@ def run(searcher, analyzer, reader, maxLens, minDocFreqs, minTermFreqs):
                 if prec > best_prec["val"]:
                     best_prec["val"] = prec
                     best_prec["maxLen"] = maxLen
+                    best_prec["minTf"] = minTf
                     best_prec["minDocFreq"] = minDocFreq
-                    best_prec["minTermFreq"] = minTermFreq
                 if rec > best_rec["val"]:
                     best_rec["val"] = rec
                     best_rec["maxLen"] = maxLen
+                    best_rec["minTf"] = minTf
                     best_rec["minDocFreq"] = minDocFreq
-                    best_rec["minTermFreq"] = minTermFreq
                 if f1 > best_f1["val"]:
                     best_f1["val"] = f1
                     best_f1["maxLen"] = maxLen
+                    best_f1["minTf"] = minTf
                     best_f1["minDocFreq"] = minDocFreq
-                    best_f1["minTermFreq"] = minTermFreq
                 if prec5 > best_prec5["val"]:
                     best_prec5["val"] = prec5
                     best_prec5["maxLen"] = maxLen
+                    best_prec5["minTf"] = minTf
                     best_prec5["minDocFreq"] = minDocFreq
-                    best_prec5["minTermFreq"] = minTermFreq
                 print("precision:", prec, "recall:", rec, "f1:", f1, "p@5:", prec5)
-    print(best_prec)
-    print(best_rec)
-    print(best_f1)
-    print(best_prec5)
+    print("PRECISION", best_prec)
+    print("RECALL", best_rec)
+    print("F1", best_f1)
+    print("PREC@5", best_prec5)
 
 if __name__ == '__main__':
     lucene.initVM(vmargs=['-Djava.awt.headless=true'])
@@ -145,5 +135,5 @@ if __name__ == '__main__':
     searcher.setSimilarity(BM25Similarity())
     analyzer = EnglishAnalyzer()
     #analyzer = ShingleAnalyzerWrapper(analyzer, 3)
-    run(searcher, analyzer, reader, maxLens=[5, 6, 7, 8, 9, 10], minDocFreqs=[0, 1, 2, 3, 4, 5], minTermFreqs=[0, 1, 2, 3, 4, 5])
+    run(searcher, analyzer, reader, maxLens=[9], minTfs=[4], minDocFreqs=[2])
     del searcher

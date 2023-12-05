@@ -10,7 +10,7 @@ from org.apache.lucene.analysis.shingle import ShingleAnalyzerWrapper
 from org.apache.lucene.index import DirectoryReader, Term, SingleTermsEnum, SlowImpactsEnum
 from org.apache.lucene.queryparser.classic import QueryParser
 from org.apache.lucene.store import MMapDirectory
-from org.apache.lucene.search import IndexSearcher
+from org.apache.lucene.search import IndexSearcher, BooleanQuery, BooleanClause, TermQuery
 from org.apache.lucene.search.similarities import BM25Similarity
 from org.apache.lucene.analysis.tokenattributes import CharTermAttribute, TermFrequencyAttribute
 from utils import prune_unwanted
@@ -32,7 +32,7 @@ def mltByHand(docId, analyzer, reader, maxLen, minTf, minDocFreq, noOfTerms):
 
     Returns
     ----------
-    res : A query consisting of a string concatenating the top extracted query terms together.
+    res : A query consisting of the top extracted query terms.
     """
 
     #start = time.time()
@@ -48,6 +48,7 @@ def mltByHand(docId, analyzer, reader, maxLen, minTf, minDocFreq, noOfTerms):
     ts.reset()
     while ts.incrementToken():
         term = termAtt.toString()
+        #print(term)
         #filter stopwords and terms that are too long
         if term in EnglishAnalyzer.ENGLISH_STOP_WORDS_SET or len(term) > maxLen:
             continue
@@ -79,12 +80,11 @@ def mltByHand(docId, analyzer, reader, maxLen, minTf, minDocFreq, noOfTerms):
     #retrieve the top 30 query terms and turn them into a concatenated query
     sorted_query_terms = sorted(query_tf_idf.items(), key=lambda x: x[1], reverse=True)
     top_query_terms = sorted_query_terms[:noOfTerms]
-    res = ""
+    builder = BooleanQuery.Builder()
     for i in range(len(top_query_terms)):
         qt = top_query_terms[i][0]
-        res += qt + " "
-    #print("res:", res)
-    res = QueryParser("content", analyzer).parse(res)
+        builder.add(TermQuery(Term("content", qt)), BooleanClause.Occur.SHOULD)
+    res = builder.build()
     #end = time.time()
     #print("THIRD PART:", end - start)
     return res
@@ -132,6 +132,6 @@ if __name__ == '__main__':
     searcher = IndexSearcher(reader)
     searcher.setSimilarity(BM25Similarity())
     analyzer = EnglishAnalyzer()
-    #analyzer = ShingleAnalyzerWrapper(analyzer, 3)
+    #analyzer = ShingleAnalyzerWrapper(analyzer, 5)
     run(searcher, analyzer, reader)
     del searcher

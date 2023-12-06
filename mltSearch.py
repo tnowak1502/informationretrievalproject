@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-INDEX_DIR = "index.index"
-
 import sys, os, lucene, time, math
 
 from java.nio.file import Paths
@@ -12,8 +10,10 @@ from org.apache.lucene.queryparser.classic import QueryParser
 from org.apache.lucene.store import MMapDirectory
 from org.apache.lucene.search import IndexSearcher, BooleanQuery, BooleanClause, TermQuery
 from org.apache.lucene.search.similarities import BM25Similarity
-from org.apache.lucene.analysis.tokenattributes import CharTermAttribute, TermFrequencyAttribute
+from org.apache.lucene.analysis.tokenattributes import CharTermAttribute, TermFrequencyAttribute, TypeAttribute, PayloadAttribute, BytesTermAttribute
 from utils import prune_unwanted
+from MinHashAnalyzer import MinHashAnalyzer
+from org.apache.lucene.analysis.minhash import MinHashFilter
 
 def mltByHand(docId, analyzer, reader, maxLen, minTf, minDocFreq, noOfTerms):
     """
@@ -48,11 +48,14 @@ def mltByHand(docId, analyzer, reader, maxLen, minTf, minDocFreq, noOfTerms):
     ts.reset()
     while ts.incrementToken():
         term = termAtt.toString()
-        #print(term)
+        #print(typeAtt.type())
+        #print(MinHashFilter.LongPair(termAtt).val1)
+        #print(LongPair(termAtt).val2)
         #filter stopwords and terms that are too long
         if term in EnglishAnalyzer.ENGLISH_STOP_WORDS_SET or len(term) > maxLen:
             continue
         freq = freqAtt.getTermFrequency()
+        #print(term, freq)
         if qt_tf.get(term) is None:
             qt_tf[term] = freq
         else:
@@ -98,7 +101,7 @@ def run(searcher, analyzer, reader):
             return
         print()
         print("Searching for:", command)
-        query = QueryParser("content", analyzer).parse(prune_unwanted(command))
+        query = QueryParser("title", analyzer).parse(prune_unwanted(command))
         scoreDocs = searcher.search(query, 5).scoreDocs
         for i in range(len(scoreDocs)):
             scoreDoc = scoreDocs[i]
@@ -127,6 +130,7 @@ if __name__ == '__main__':
     lucene.initVM(vmargs=['-Djava.awt.headless=true'])
     print('lucene', lucene.VERSION)
     base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+    INDEX_DIR = "index.index"
     directory = MMapDirectory(Paths.get(os.path.join(base_dir, INDEX_DIR)))
     reader = DirectoryReader.open(directory)
     searcher = IndexSearcher(reader)

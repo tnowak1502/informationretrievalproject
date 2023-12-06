@@ -7,6 +7,7 @@ from org.apache.lucene.document import Document, Field, FieldType
 from java.nio.file import Paths
 
 
+
 def create_index(documents, index_path):
     """
     Creates a Lucene index or adds to an existing Lucene index at specified path
@@ -19,6 +20,7 @@ def create_index(documents, index_path):
 
     """
     analyzer = EnglishAnalyzer()
+    #analyzer = ShingleAnalyzerWrapper(analyzer, 5)
     index_config = IndexWriterConfig(analyzer)
     index_directory = FSDirectory.open(Paths.get(index_path))
 
@@ -52,6 +54,7 @@ def add_document(writer, doc_id, document):
     fieldtype.setStored(True)
     fieldtype.setTokenized(True)
     fieldtype.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS)
+    #fieldtype.setStoreTermVectors(True)
     # Add a field for the document ID
     doc.add(Field("doc_id", str(doc_id), fieldtype))
 
@@ -60,6 +63,7 @@ def add_document(writer, doc_id, document):
 
     # Add a field for the document content
     doc.add(Field("content", document["content"], fieldtype))
+
 
     # Add the document to the index
     print("Adding", document["title"])

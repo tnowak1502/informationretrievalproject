@@ -6,6 +6,7 @@ from nltk.stem import PorterStemmer
 import numpy as np
 import hashlib
 from utils import prune_unwanted
+import time
 
 stop_words = set(stopwords.words('english'))
 
@@ -36,8 +37,7 @@ def create_hash_funcs(seed, num_hashes):
 def create_signature(hash_funcs, preprocessed):
     hash_values = np.full((len(hash_funcs), len(preprocessed)), np.inf)
     for i, func in enumerate(hash_funcs):
-        for j, shingle in enumerate(preprocessed):
-            hash_values[i, j] = func(shingle)
+        hash_values[i] = list(map(func, preprocessed))
     minhash_values = np.min(hash_values, axis=1)
     return minhash_values
 
@@ -81,8 +81,9 @@ if __name__ == "__main__":
 
     # Loop over documents to extract text terms and calculate minhash signature
     for title in documents.keys():
+
         terms = documents[title]
-        
+
         sig = minhash(terms, k, hash_funcs)
 
         signatures[title] = sig

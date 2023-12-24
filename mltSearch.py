@@ -1,96 +1,17 @@
-#!/usr/bin/env python
-
-import sys, os, lucene, time, math
+import sys, os, lucene
 
 from java.nio.file import Paths
 from org.apache.lucene.analysis.en import EnglishAnalyzer
-from org.apache.lucene.analysis.shingle import ShingleAnalyzerWrapper
-from org.apache.lucene.index import DirectoryReader, Term, SingleTermsEnum, SlowImpactsEnum
+from org.apache.lucene.index import DirectoryReader
 from org.apache.lucene.queryparser.classic import QueryParser
 from org.apache.lucene.store import MMapDirectory
-from org.apache.lucene.search import IndexSearcher, BooleanQuery, BooleanClause, TermQuery
+from org.apache.lucene.search import IndexSearcher
 from org.apache.lucene.search.similarities import BM25Similarity
-from org.apache.lucene.analysis.tokenattributes import CharTermAttribute, TermFrequencyAttribute, TypeAttribute, PayloadAttribute, BytesTermAttribute
+
+from customMoreLikeThis import customMoreLikeThis
 from utils import prune_unwanted
-from MinHashAnalyzer import MinHashAnalyzer
-from org.apache.lucene.analysis.minhash import MinHashFilter
 
-def mltByHand(docId, analyzer, reader, maxLen, minTf, minDocFreq, noOfTerms):
-    """
-    Extracts the terms with the highest tf-id-score from a given document and turns them into a query to be used for
-    relevant document retrieval.
 
-    Parameters
-    ----------
-    docId : The lucene index id of the document to extract terms from.
-    analyzer : The analyzer that is used to turn the document's contents into a token stream, this should be the same as the analyzer used to build the index.
-    reader : The reader reading the lucene index to search in.
-    maxLen : tuning parameter to exclude terms that go over a certain length (to avoid terms that are extremely specific)
-    minTf : The minimum amount of times a term needs to appear in the document to be taken into account during score calculation
-    minDocFreq : The minimum amount of documents in the index a term needs to appear in to be taken into account during score calculation
-    noOfTerms : The number of query terms to extract
-
-    Returns
-    ----------
-    res : A query consisting of the top extracted query terms.
-    """
-
-    #start = time.time()
-
-    #retrieve the document and its contents and turn them into a token stream for analysis
-    doc = reader.storedFields().document(docId)
-    contents = doc.get("content")
-    ts = analyzer.tokenStream("content", contents)
-    #collect the term frequency for each term in the document
-    qt_tf = {}
-    termAtt = ts.addAttribute(CharTermAttribute.class_)
-    freqAtt = ts.addAttribute(TermFrequencyAttribute.class_)
-    ts.reset()
-    while ts.incrementToken():
-        term = termAtt.toString()
-        #print(typeAtt.type())
-        #print(MinHashFilter.LongPair(termAtt).val1)
-        #print(LongPair(termAtt).val2)
-        #filter stopwords and terms that are too long
-        if term in EnglishAnalyzer.ENGLISH_STOP_WORDS_SET or len(term) > maxLen:
-            continue
-        freq = freqAtt.getTermFrequency()
-        #print(term, freq)
-        if qt_tf.get(term) is None:
-            qt_tf[term] = freq
-        else:
-            qt_tf[term] += freq
-    ts.close()
-
-    #end = time.time()
-    #print("FIRST PART:", end - start)
-    #start = time.time()
-
-    #calculate tf-idf-scores for each term
-    query_tf_idf = {}
-    #maxCount = max(qt_tf.values())
-    numDocs = reader.numDocs()
-    for query_term, tf in qt_tf.items():
-        if tf >= minTf:
-            doc_freq = reader.docFreq(Term("content", term))
-            if doc_freq >= minDocFreq:
-                idf = math.log(1+ (numDocs - doc_freq+0.5)/(doc_freq + 0.5))
-                query_tf_idf[query_term] = tf*idf
-    #end = time.time()
-    #print("SECOND PART:", end-start)
-    #start = time.time()
-
-    #retrieve the top 30 query terms and turn them into a concatenated query
-    sorted_query_terms = sorted(query_tf_idf.items(), key=lambda x: x[1], reverse=True)
-    top_query_terms = sorted_query_terms[:noOfTerms]
-    builder = BooleanQuery.Builder()
-    for i in range(len(top_query_terms)):
-        qt = top_query_terms[i][0]
-        builder.add(TermQuery(Term("content", qt)), BooleanClause.Occur.SHOULD)
-    res = builder.build()
-    #end = time.time()
-    #print("THIRD PART:", end - start)
-    return res
 
 def run(searcher, analyzer, reader):
     while True:
@@ -116,8 +37,7 @@ def run(searcher, analyzer, reader):
             else:
                 print()
                 break
-        mltq = mltByHand(scoreDocs[int(command)-1].doc, analyzer, reader, 9, 4, 2, 60)
-        #print("query:", mltq)
+        mltq = customMoreLikeThis(scoreDocs[int(command) - 1].doc, analyzer, reader, 9, 4, 2, 60)
         likeDocs = searcher.search(mltq, 20).scoreDocs
         print("Relevant documents:")
         for likeDoc in likeDocs:
@@ -130,12 +50,12 @@ if __name__ == '__main__':
     lucene.initVM(vmargs=['-Djava.awt.headless=true'])
     print('lucene', lucene.VERSION)
     base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-    INDEX_DIR = "index.index"
-    directory = MMapDirectory(Paths.get(os.path.join(base_dir, INDEX_DIR)))
+    directory = MMapDirectory(Paths.get(os.path.join(base_dir, "index.index")))
+
     reader = DirectoryReader.open(directory)
     searcher = IndexSearcher(reader)
     searcher.setSimilarity(BM25Similarity())
     analyzer = EnglishAnalyzer()
-    #analyzer = ShingleAnalyzerWrapper(analyzer, 5)
+
     run(searcher, analyzer, reader)
     del searcher

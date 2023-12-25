@@ -1,6 +1,3 @@
-
-
-
 class Evaluator():
     def __init__(self, groundtruth, n):
         self.groundtruth = groundtruth

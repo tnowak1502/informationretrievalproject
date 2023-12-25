@@ -14,6 +14,15 @@ from utils import prune_unwanted
 
 
 def run(searcher, analyzer, reader):
+    """
+    Prompts the user with an open search and then allows them to select a document from the results for which relevant documents are retrieved.
+
+    Parameters
+    ----------
+    searcher: A lucene searcher over the index
+    analyzer: The analyzer to parse queries and to pass to customMoreLikeThis. Should be the same as the analyzer used to build the index.
+    reader: A lucene reading over the index
+    """
     while True:
         print()
         print("Hit enter with no input to quit.")
@@ -47,11 +56,13 @@ def run(searcher, analyzer, reader):
 
 
 if __name__ == '__main__':
+    #start lucene and locate index
     lucene.initVM(vmargs=['-Djava.awt.headless=true'])
     print('lucene', lucene.VERSION)
     base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
     directory = MMapDirectory(Paths.get(os.path.join(base_dir, "index.index")))
 
+    #load index, initialize searcher and analyzer
     reader = DirectoryReader.open(directory)
     searcher = IndexSearcher(reader)
     searcher.setSimilarity(BM25Similarity())

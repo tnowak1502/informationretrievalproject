@@ -21,17 +21,17 @@ def evaluateParams(searcher, analyzer, reader, params, noToRetrieve=20, n=5, pri
 
     Parameters
     ----------
-    searcher: A lucene searcher over the index
-    analyzer: The analyzer to parse queries and to pass to customMoreLikeThis. Should be the same as the analyzer used to build the index.
-    reader: A lucene reading over the index
-    params: A dict containing the parameters for customMoreLikeThis (maxLen, minTf, minDocFreq, noOfTerms)
-    noToRetrieve: The amount of relevant documents to retrieve based on the moreLikeThis query
-    n: Where to measure precision aside from the overall precision
-    prints: Flag to indicate if the results for individual ground truth entries should be displayed
+    searcher : IndexSearcher : A lucene searcher over the index
+    analyzer : Analyzer : The analyzer to parse queries and to pass to customMoreLikeThis. Should be the same as the analyzer used to build the index.
+    reader: DirectoryReader : A lucene reading over the index
+    params : dict : A dict containing the parameters for customMoreLikeThis (maxLen, minTf, minDocFreq, noOfTerms)
+    noToRetrieve : int : The amount of relevant documents to retrieve based on the moreLikeThis query
+    n : int : Where to measure precision aside from the overall precision
+    prints : bool : Flag to indicate if the results for individual ground truth entries should be displayed
 
     Returns
     ----------
-    evaluator.finalEval(): A dict containing the average precision, precision@N, recall, and f1 score over the entire ground truth
+    evaluator.finalEval() : dict : A dict containing the average precision, precision@N, recall, and f1 score over the entire ground truth
     """
 
     #initiate evaluator and extract parameters
@@ -86,16 +86,16 @@ def gridSearch(searcher, analyzer, reader, maxLens, minTfs, minDocFreqs, noOfTer
 
     Parameters
     ----------
-    searcher: A lucene searcher over the index
-    analyzer: The analyzer to parse queries and to pass to customMoreLikeThis. Should be the same as the analyzer used to build the index.
-    reader: A lucene reading over the index
-    maxLens: An array containing the different values for maxLen to test
-    minTfs: An array containing the different values for minTf to test
-    minDocFreqs: An array containing the different values for minDocFreq to test
-    noOfTermss: An array containing the different values for noOfTerms to test
-    noToRetrieve: The amount of relevant documents to retrieve based on the moreLikeThis query
-    n: Where to measure precision aside from the overall precision
-    individualPrints: Flag to indicate if the results for individual ground truth entries should be displayed
+    searcher : IndexSearcher : A lucene searcher over the index
+    analyzer : Analyzer : The analyzer to parse queries and to pass to customMoreLikeThis. Should be the same as the analyzer used to build the index.
+    reader: DirectoryReader : A lucene reading over the index
+    maxLens : list<int> : A list containing the different values for maxLen to test
+    minTfs : list<int> : A list containing the different values for minTf to test
+    minDocFreqs : list<int> : A list containing the different values for minDocFreq to test
+    noOfTermss : list<int> : A list containing the different values for noOfTerms to test
+    noToRetrieve : int : The amount of relevant documents to retrieve based on the moreLikeThis query
+    n : int : Where to measure precision aside from the overall precision
+    individualPrints : bool : Flag to indicate if the results for individual ground truth entries should be displayed
     """
 
     #init dicts to store best results per metric
@@ -149,14 +149,13 @@ def precisionRecallCurve(searcher, analyzer, reader, params):
 
     Parameters
     ----------
-    searcher: A lucene searcher over the index
-    analyzer: The analyzer to parse queries and to pass to customMoreLikeThis. Should be the same as the analyzer used to build the index.
-    reader: A lucene reading over the index
-    params: A dict containing the parameters for customMoreLikeThis (maxLen, minTf, minDocFreq, noOfTerms)
+    searcher : IndexSearcher : A lucene searcher over the index
+    analyzer : Analyzer : The analyzer to parse queries and to pass to customMoreLikeThis. Should be the same as the analyzer used to build the index.
+    reader: DirectoryReader : A lucene reading over the index
+    params : dict : A dict containing the parameters for customMoreLikeThis (maxLen, minTf, minDocFreq, noOfTerms)
     """
 
-    precisions = []
-    recalls = []
+    precisionsAndRecalls = []
     recall = 0
     noToRetrieve = 1
     #evaluate customMoreLikeThis while increasing the amount of retrieved documents
@@ -164,12 +163,13 @@ def precisionRecallCurve(searcher, analyzer, reader, params):
         finalEval = evaluateParams(searcher, analyzer, reader, params, noToRetrieve=noToRetrieve)
         precision = finalEval["precision"]
         recall = finalEval["recall"]
+        precisionsAndRecalls.append((precision, recall))
         print(noToRetrieve, "precision:", precision, "| recall:", recall)
-        if noToRetrieve > 2000:
+        if noToRetrieve > 3000:
             break
         noToRetrieve += 1
     #store results
-    pickle.dump((precisions, recalls), open("precisionRecallCurve.pkl", "wb"))
+    pickle.dump(precisionsAndRecalls, open("precisionRecallCurve.pkl", "wb"))
 
 if __name__ == '__main__':
     lucene.initVM(vmargs=['-Djava.awt.headless=true'])

@@ -19,9 +19,9 @@ def run(searcher, analyzer, reader):
 
     Parameters
     ----------
-    searcher: A lucene searcher over the index
-    analyzer: The analyzer to parse queries and to pass to customMoreLikeThis. Should be the same as the analyzer used to build the index.
-    reader: A lucene reading over the index
+    searcher : IndexSearcher : A lucene searcher over the index
+    analyzer : Analyzer : The analyzer to parse queries and to pass to customMoreLikeThis. Should be the same as the analyzer used to build the index.
+    reader : DirectoryReader : A lucene reader reading the index
     """
     while True:
         print()

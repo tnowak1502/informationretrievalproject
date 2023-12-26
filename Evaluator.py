@@ -1,5 +1,18 @@
 class Evaluator():
+    """
+    Used to evaluate a retrieval system regarding precision(@N), recall and f1-score.
+    Call evalSingle to evaluate for one ground truth example. After doing the same for the entire ground truth, call
+    finalEval to compute the averages over all examples.
+    """
     def __init__(self, groundtruth, n):
+        """
+        Initiates a new Evaluator
+
+        Parameters
+        ----------
+        groundtruth : dict : the collection of ground truth examples
+        n : int : where to measure precision
+        """
         self.groundtruth = groundtruth
         self.n = n
 

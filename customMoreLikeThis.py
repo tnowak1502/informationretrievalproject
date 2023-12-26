@@ -12,17 +12,17 @@ def customMoreLikeThis(docId, analyzer, reader, maxLen, minTf, minDocFreq, noOfT
 
     Parameters
     ----------
-    docId : The lucene index id of the document to extract terms from.
-    analyzer : The analyzer that is used to turn the document's contents into a token stream, this should be the same as the analyzer used to build the index.
-    reader : The reader reading the lucene index to search in.
-    maxLen : tuning parameter to exclude terms that go over a certain length (to avoid terms that are extremely specific)
-    minTf : The minimum amount of times a term needs to appear in the document to be taken into account during score calculation
-    minDocFreq : The minimum amount of documents in the index a term needs to appear in to be taken into account during score calculation
-    noOfTerms : The number of query terms to extract
+    docId : int: The lucene index id of the document to extract terms from.
+    analyzer : Analyzer: The analyzer that is used to turn the document's contents into a token stream, this should be the same as the analyzer used to build the index.
+    reader : DirectoryReader : The reader reading the lucene index to search in.
+    maxLen : int : tuning parameter to exclude terms that go over a certain length (to avoid terms that are extremely specific)
+    minTf : int : The minimum amount of times a term needs to appear in the document to be taken into account during score calculation
+    minDocFreq : int : The minimum amount of documents in the index a term needs to appear in to be taken into account during score calculation
+    noOfTerms : int : The number of query terms to extract
 
     Returns
     ----------
-    res : A query consisting of the top extracted query terms.
+    res : BooleanQueary : A lucene query consisting of the top extracted query terms.
     """
 
     #retrieve the document and its contents and turn them into a token stream for analysis

@@ -1,14 +1,19 @@
+import copy
 import pickle
+
+import pandas
 import pandas as pd
 from nltk import ngrams
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 import numpy as np
 import hashlib
+import matplotlib.pyplot as plt
+import json
 from utils import prune_unwanted
 import time
 
-stop_words = set(stopwords.words('english'))
+#stop_words = set(stopwords.words('english'))
 
 def shingle(text, k):
     shingles = ngrams(text, k, pad_right=True, right_pad_symbol="_")
@@ -61,51 +66,84 @@ def jaccard(terms1, terms2, k):
     intersection = preprocessed1.intersection(preprocessed2)
     union = preprocessed1.union(preprocessed2)
     return float(len(intersection))/float(len(union))
+def jaccardSignature(x,y):
+    return len(x.intersection(y))/len(x.union(y))
+def lshHashFunc(val,bucketSize):
+    return val%bucketSize
+def LSH(file,bands,bucketSize):
+    #file opendoen
+    with open(file, 'rb') as file:
+        signatures = pickle.load(file)
+    bandSize=128/bands
+    candidatePair=[]
+    for x in range(bands):
+        hashTable={}
+        signatureIndex=(int(bandSize*x),int(bandSize*(x+1)))
+        for key in signatures:
+            bandedSig=signatures[key][signatureIndex[0]:signatureIndex[1]]
+            sum=np.sum(bandedSig)
+            hashIndex=lshHashFunc(sum,bucketSize)
+            if hashIndex in hashTable:
+                candidatePair.append((key,hashTable[hashIndex]))
+            else:
+                hashTable[hashIndex]=key
+    return candidatePair
 
+def testEval(candidates,size):
+    with open("groundtruth.json") as f_in:
+        groundtruth = json.load(f_in)
+    score=0
+    for candidate in candidates:
+        if candidate[0] in groundtruth:
+            if candidate[1] in groundtruth[candidate[0]]:
+                score+=1
+    return score
+def createDataGraph(file):
+    with open(file, 'rb') as file:
+        signatures = pickle.load(file)
+    counter=0
+    #interValDict={"0-10":100,"10-20":80,"20-30":60,"30-40":40,"40-50":51,"50-60":22,"60-70":64,"70-80":20,"80-90":18,"90-100":3}
+    interValDict={"0-10":0,"10-20":0,"20-30":0,"30-40":0,"40-50":0,"50-60":0,"60-70":0,"70-80":0,"80-90":0,"90-100":0}
+    signatures2=copy.deepcopy(signatures)
+    for x in signatures:
+        for y in signatures2:
+            if x !=y:
+                score=minhash_sim(signatures[x],signatures[y])
+                print(score)
+                if 0 <= score < 0.1:
+                    interValDict["0-10"] += 1
+                elif 0.1 <= score < 0.2:
+                    interValDict["10-20"] += 1
+                elif 0.2 <= score < 0.3:
+                    interValDict["20-30"] += 1
+                elif 0.3 <= score < 0.4:
+                    interValDict["30-40"] += 1
+                elif 0.4 <= score < 0.5:
+                    interValDict["40-50"] += 1
+                elif 0.5 <= score < 0.6:
+                    interValDict["50-60"] += 1
+                elif 0.6 <= score < 0.7:
+                    interValDict["60-70"] += 1
+                elif 0.7 <= score < 0.8:
+                    interValDict["70-80"] += 1
+                elif 0.8 <= score < 0.9:
+                    interValDict["80-90"] += 1
+                elif 0.9 <= score <= 1.0:
+                    interValDict["90-100"] += 1
+        del signatures2[x]
+    print(interValDict)
+    intervals = list(interValDict.keys())
+    values = list(interValDict.values())
+    plt.bar(intervals, values, color='blue',
+            width=0.8)
+    plt.xlabel("similarity betweendocuments(in %)")
+    plt.ylabel("Number of documents")
+    plt.title("Number of documents in funciton of their similarity with eachother")
+    plt.show()
 if __name__ == "__main__":
-
-    signatures = {}
-
-    # Create hash functions that will be used by the minhash algorithm
-    seed = 1
-    num_hashes = 128
-    hash_funcs = create_hash_funcs(seed, num_hashes)
-
-    # length of the shingles
-    k = 3
-
-    # Reading all preprocessed documents from storage 
-    documents = []
-    with open("preprocessed_data", "rb") as ppd_file:
-        documents = pickle.load(ppd_file)
-
-    # Loop over documents to extract text terms and calculate minhash signature
-    for title in documents.keys():
-
-        terms = documents[title]
-
-        sig = minhash(terms, k, hash_funcs)
-
-        signatures[title] = sig
-
-    # Store all minhash signatures as a pickled dictionary
-    with open("minhash_index", "wb") as file:
-        pickle.dump(signatures, file)
-
-        
-    # text1 = prune_unwanted(documents.at["Mafia II", "Sections"])
-    # text2 = prune_unwanted(documents.at["Mafia III", "Sections"])
-    # text3 = prune_unwanted(documents.at["Grand Theft Auto V", "Sections"])
-    # text4 = prune_unwanted(documents.at["Overwatch (video game)", "Sections"])
-        
-    # sig1 = minhash(text1, k, seed, num_hashes)
-    # sig2 = minhash(text2, k, seed, num_hashes)
-    # sig3 = minhash(text3, k, seed, num_hashes)
-    # sig4 = minhash(text4, k, seed, num_hashes)
-        
-    # print(minhash_sim(sig1, sig2), jaccard(text1, text2, k))
-    # print(check_candidate(sig1, sig3), jaccard(text1, text3, k))
-    # print(check_candidate(sig1, sig4), jaccard(text1, text4, k))
-
+    # createDataGraph("minhash_index")
+    can = LSH("minhash_index",1,1)
+    print(len(can))
+    print(testEval(can,10))
 
 

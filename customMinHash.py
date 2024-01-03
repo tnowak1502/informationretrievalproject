@@ -84,12 +84,23 @@ def LSH(file,bands,bucketSize):
             sum=np.sum(bandedSig)
             hashIndex=lshHashFunc(sum,bucketSize)
             if hashIndex in hashTable:
-                candidatePair.append((key,hashTable[hashIndex]))
+                for item in hashTable[hashIndex]:
+                     candidatePair.append((key,item))
+                hashTable[hashIndex].append(key)
             else:
-                hashTable[hashIndex]=key
+                hashTable[hashIndex]=[key]
     return candidatePair
 
-def testEval(candidates,size):
+def checkCandidates(candidatepairs,file):
+    with open(file, 'rb') as file:
+        signatures = pickle.load(file)
+    scores=[]
+    for item in candidatepairs:
+        score = minhash_sim(signatures[item[0]],signatures[item[1]])
+        pairScore=(item[0],item[1],score)
+        scores.append(pairScore)
+    return scores
+def testEval(candidates):
     with open("groundtruth.json") as f_in:
         groundtruth = json.load(f_in)
     score=0
@@ -98,6 +109,7 @@ def testEval(candidates,size):
             if candidate[1] in groundtruth[candidate[0]]:
                 score+=1
     return score
+
 def createDataGraph(file):
     with open(file, 'rb') as file:
         signatures = pickle.load(file)
@@ -142,8 +154,11 @@ def createDataGraph(file):
     plt.show()
 if __name__ == "__main__":
     # createDataGraph("minhash_index")
-    can = LSH("minhash_index",1,1)
+    can = LSH("minhash_index",1,1000)
     print(len(can))
+    settedCan=set(can)
+    print(len(settedCan))
+    scores= checkCandidates(can,"minhash_index")
     print(testEval(can,10))
 
 

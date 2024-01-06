@@ -227,15 +227,32 @@ def demo():
     # print("a run with 4 band gives: " + str(len(can3))+"potential candidates")
     # print("a run with 8 band gives: " + str(len(can4))+"potential candidates")
 
-    #candidates single title
+    # #candidates single title
+    # title = "Batman: The Telltale Series"
+    # can1 = LSHSingle("minhash_index", 1, 100,title)
+    # print("can1 done")
+    # can2 = LSHSingle("minhash_index", 2, 100,title)
+    # print("can2 done")
+    # can3 = LSHSingle("minhash_index", 4, 100,title)
+    # print("can3 done")
+    # can4 = LSHSingle("minhash_index", 8, 100,title)
+    # print("can4 done")
+    #
+    # print("---------RUNS WITH 100 buckets size and different amount of bands---------")
+    # print("a run with 1 band gives: " + str(len(can1))+"potential candidates")
+    # print("a run with 2 band gives: " + str(len(can2))+"potential candidates")
+    # print("a run with 4 band gives: " + str(len(can3))+"potential candidates")
+    # print("a run with 8 band gives: " + str(len(can4))+"potential candidates")
+
+    #candidates single title different buckets
     title = "Batman: The Telltale Series"
-    can1 = LSHSingle("minhash_index", 1, 100,title)
+    can1 = LSHSingle("minhash_index", 4, 10,title)
     print("can1 done")
-    can2 = LSHSingle("minhash_index", 2, 100,title)
+    can2 = LSHSingle("minhash_index", 4, 100,title)
     print("can2 done")
-    can3 = LSHSingle("minhash_index", 4, 100,title)
+    can3 = LSHSingle("minhash_index", 4, 1000,title)
     print("can3 done")
-    can4 = LSHSingle("minhash_index", 8, 100,title)
+    can4 = LSHSingle("minhash_index", 4, 10000,title)
     print("can4 done")
 
     print("---------RUNS WITH 100 buckets size and different amount of bands---------")
@@ -243,7 +260,6 @@ def demo():
     print("a run with 2 band gives: " + str(len(can2))+"potential candidates")
     print("a run with 4 band gives: " + str(len(can3))+"potential candidates")
     print("a run with 8 band gives: " + str(len(can4))+"potential candidates")
-
 if __name__ == "__main__":
     print("test")
     demo()

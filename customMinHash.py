@@ -13,20 +13,20 @@ import json
 from utils import prune_unwanted
 import time
 
-#stop_words = set(stopwords.words('english'))
+stop_words = set(stopwords.words('english'))
 
 def shingle(text, k):
     shingles = ngrams(text, k, pad_right=True, right_pad_symbol="_")
     return list(shingles)
 
-# def stemming_and_stopword_removal(text):
-#     stemmer = PorterStemmer()
-#     terms = [stemmer.stem(term) for term in text.lower().split() if term not in stop_words]
-#     return terms
+def stemming_and_stopword_removal(text):
+    stemmer = PorterStemmer()
+    terms = [stemmer.stem(term) for term in text.lower().split() if term not in stop_words]
+    return terms
 
-# def preprocess(text, k):
-#     terms = stemming_and_stopword_removal(text)
-#     return shingle(terms, k)
+def preprocess(text, k):
+    terms = stemming_and_stopword_removal(text)
+    return shingle(terms, k)
 
 def hash_func(seed):
     def hash_func(x):
@@ -89,14 +89,36 @@ def LSH(file,bands,bucketSize):
                 hashTable[hashIndex].append(key)
             else:
                 hashTable[hashIndex]=[key]
-    return candidatePair
-
+    return set(candidatePair)
+def LSHSingle(file,bands,bucketSize,title):
+    #file opendoen
+    with open(file, 'rb') as file:
+        signatures = pickle.load(file)
+    bandSize=128/bands
+    candidatePair=[]
+    searchSig=signatures[title]
+    for x in range(bands):
+        signatureIndex=(int(bandSize*x),int(bandSize*(x+1)))
+        bandedSearchSig=searchSig[signatureIndex[0]:signatureIndex[1]]
+        sum = np.sum(bandedSearchSig)
+        hashIndexSearchSig = lshHashFunc(sum,bucketSize)
+        for key in signatures:
+            bandedSig=signatures[key][signatureIndex[0]:signatureIndex[1]]
+            sum=np.sum(bandedSig)
+            hashIndex=lshHashFunc(sum,bucketSize)
+            if hashIndexSearchSig == hashIndex:
+                candidatePair.append((title,key))
+    setCandidate=set(candidatePair)
+    setCandidate.remove((title,title))
+    return setCandidate
 def checkCandidates(candidatepairs,file):
     with open(file, 'rb') as file:
         signatures = pickle.load(file)
     scores=[]
     for item in candidatepairs:
         score = minhash_sim(signatures[item[0]],signatures[item[1]])
+        if score == 0:
+            continue
         pairScore=(item[0],item[1],score)
         scores.append(pairScore)
     return scores
@@ -109,6 +131,16 @@ def testEval(candidates):
             if candidate[1] in groundtruth[candidate[0]]:
                 score+=1
     return score
+
+def testEvalSingle(candidates,title):
+    with open("groundtruth.json") as f_in:
+        groundtruth = json.load(f_in)
+    score = 0
+    truth=groundtruth[title]
+    for item in candidates:
+        if item[1] in truth:
+            score+=1
+    return score/truth
 
 def createDataGraph(file):
     with open(file, 'rb') as file:
@@ -151,13 +183,83 @@ def createDataGraph(file):
     plt.ylabel("Number of documents")
     plt.title("Number of documents in funciton of their similarity with eachother")
     plt.show()
+
+def demo():
+    ###GENERATE SIGNATURES###
+    # signatures = {}
+    #
+    # # Create hash functions that will be used by the minhash algorithm
+    # seed = 1
+    # num_hashes = 128
+    # hash_funcs = create_hash_funcs(seed, num_hashes)
+    #
+    # # length of the shingles
+    # k = 3
+    #
+    # # Reading all preprocessed documents from storage
+    # documents = []
+    # with open("preprocessed_data", "rb") as ppd_file:
+    #     documents = pickle.load(ppd_file)
+    #
+    # # Loop over documents to extract text terms and calculate minhash signature
+    # for title in documents.keys():
+    #
+    #     terms = documents[title]
+    #
+    #     sig = minhash(terms, k, hash_funcs)
+    #
+    #     signatures[title] = sig
+
+    ###RUN LSH ###
+    #candidates different bands
+    # can1 = LSH("minhash_index", 1, 100)
+    # print("can1 done")
+    # can2 = LSH("minhash_index", 2, 100)
+    # print("can2 done")
+    # can3 = LSH("minhash_index", 4, 100)
+    # print("can3 done")
+    # can4 = LSH("minhash_index", 8, 100)
+    # print("can4 done")
+    #
+    # print("---------RUNS WITH 100 buckets size and different amount of bands---------")
+    # print("a run with 1 band gives: " + str(len(can1))+"potential candidates")
+    # print("a run with 2 band gives: " + str(len(can2))+"potential candidates")
+    # print("a run with 4 band gives: " + str(len(can3))+"potential candidates")
+    # print("a run with 8 band gives: " + str(len(can4))+"potential candidates")
+
+    #candidates single title
+    title = "Batman: The Telltale Series"
+    can1 = LSHSingle("minhash_index", 1, 100,title)
+    print("can1 done")
+    can2 = LSHSingle("minhash_index", 2, 100,title)
+    print("can2 done")
+    can3 = LSHSingle("minhash_index", 4, 100,title)
+    print("can3 done")
+    can4 = LSHSingle("minhash_index", 8, 100,title)
+    print("can4 done")
+
+    print("---------RUNS WITH 100 buckets size and different amount of bands---------")
+    print("a run with 1 band gives: " + str(len(can1))+"potential candidates")
+    print("a run with 2 band gives: " + str(len(can2))+"potential candidates")
+    print("a run with 4 band gives: " + str(len(can3))+"potential candidates")
+    print("a run with 8 band gives: " + str(len(can4))+"potential candidates")
+
 if __name__ == "__main__":
+    print("test")
+    demo()
     # createDataGraph("minhash_index")
-    can = LSH("minhash_index",1,1000)
-    print(len(can))
-    settedCan=set(can)
-    print(len(settedCan))
-    scores= checkCandidates(can,"minhash_index")
-    print(testEval(can,10))
+    # can = LSH("minhash_index",8,100)
+    # counter=0
+    # for item in can:
+    #     if item[0]=="Batman: The Telltale Series" or item[1]=="Batman: The Telltale Series":
+    #         counter+=1
+    # print(counter)
+    # print(len(can))
+    # scores= checkCandidates(can,"minhash_index")
+    #print(testEval(can,10))
 
 
+    # title="Batman: The Telltale Series"
+    # can = LSHSingle("minhash_index",8,100,title)
+    # scores = checkCandidates(can,"minhash_index")
+    # print(scores)

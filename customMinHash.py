@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # length of the shingles
     k = 3
 
-    # Reading all preprocessed documents from storage 
+    # Reading all preprocessed documents from storage (This file can be generated with preprocess_dataset.py)
     documents = []
     with open("preprocessed_data", "rb") as ppd_file:
         documents = pickle.load(ppd_file)
@@ -91,21 +91,3 @@ if __name__ == "__main__":
     # Store all minhash signatures as a pickled dictionary
     with open("minhash_index", "wb") as file:
         pickle.dump(signatures, file)
-
-        
-    # text1 = prune_unwanted(documents.at["Mafia II", "Sections"])
-    # text2 = prune_unwanted(documents.at["Mafia III", "Sections"])
-    # text3 = prune_unwanted(documents.at["Grand Theft Auto V", "Sections"])
-    # text4 = prune_unwanted(documents.at["Overwatch (video game)", "Sections"])
-        
-    # sig1 = minhash(text1, k, seed, num_hashes)
-    # sig2 = minhash(text2, k, seed, num_hashes)
-    # sig3 = minhash(text3, k, seed, num_hashes)
-    # sig4 = minhash(text4, k, seed, num_hashes)
-        
-    # print(minhash_sim(sig1, sig2), jaccard(text1, text2, k))
-    # print(check_candidate(sig1, sig3), jaccard(text1, text3, k))
-    # print(check_candidate(sig1, sig4), jaccard(text1, text4, k))
-
-
-

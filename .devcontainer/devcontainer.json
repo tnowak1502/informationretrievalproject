@@ -1,6 +1,8 @@
 {
     "image" : "coady/pylucene",
 
+    "postCreateCommand": "pip install -r requirements.txt",
+
     "customizations": {
         "vscode": {
           "extensions": ["ms-python.python", "visualstudioexptteam.vscodeintelli"]

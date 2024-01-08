@@ -47,9 +47,10 @@ def run(searcher, analyzer, reader):
                 print()
                 break
         mltq = customMoreLikeThis(scoreDocs[int(command) - 1].doc, analyzer, reader, 9, 4, 2, 60)
-        likeDocs = searcher.search(mltq, 20).scoreDocs
+        likeDocs = searcher.search(mltq, 21).scoreDocs
         print("Relevant documents:")
-        for likeDoc in likeDocs:
+        # remove the first result, because it will be the game itself
+        for likeDoc in likeDocs[1:]:
             doc = searcher.doc(likeDoc.doc)
             print('     title:', doc.get("title"), "| id:", likeDoc.doc)
 

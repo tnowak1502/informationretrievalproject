@@ -59,12 +59,14 @@ def evaluateParams(searcher, analyzer, reader, params, noToRetrieve=20, n=5, pri
 
                 #generate moreLikeThisQuery using the given parameters
                 mltq = customMoreLikeThis(scoreDoc.doc, analyzer, reader, maxLen, minTf, minDocFreq, noOfTerms)
-                likeDocs = searcher.search(mltq, noToRetrieve).scoreDocs
+                likeDocs = searcher.search(mltq, noToRetrieve+1).scoreDocs
                 retrieved = []
 
-                for likeDoc in likeDocs:
+                #remove the first result, because it will be the game itself
+                for likeDoc in likeDocs[1:]:
+                    title = doc.get("title")
                     doc = searcher.doc(likeDoc.doc)
-                    retrieved.append(doc.get("title"))
+                    retrieved.append(title)
 
                 #evaluate results
                 eval = evaluator.evalSingle(game, retrieved)
@@ -182,9 +184,9 @@ if __name__ == '__main__':
     searcher.setSimilarity(BM25Similarity())
     analyzer = EnglishAnalyzer()
 
-    #gridSearch(searcher, analyzer, reader, maxLens=[9], minTfs=[4], minDocFreqs=[2], noOfTermss=[75], n=5, noToRetrieve=20, individualPrints=False)
+    gridSearch(searcher, analyzer, reader, maxLens=[9], minTfs=[4], minDocFreqs=[2], noOfTermss=[75], n=5, noToRetrieve=20, individualPrints=True)
 
-    params = {"maxLen": 9, "minTf": 4, "minDocFreq": 2, "noOfTerms": 75}
-    precisionRecallCurve(searcher, analyzer, reader, params)
+    #params = {"maxLen": 9, "minTf": 4, "minDocFreq": 2, "noOfTerms": 75}
+    #precisionRecallCurve(searcher, analyzer, reader, params)
 
     del searcher

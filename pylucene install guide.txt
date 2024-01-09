@@ -1,4 +1,7 @@
-new wsl distro
+Create a new wsl distribution (Ubuntu is recommended)
+
+Run the following commands:
+
 sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get install 
@@ -9,24 +12,41 @@ curl https://dlcdn.apache.org/lucene/pylucene/pylucene-9.6.0-src.tar.gz
 tar -xzvf pylucene-9.6.0-src.tar.gz
 cd pylucene-9.6.0
 cd jcc
+
+Some files need to be edited for successful compilation:
+
 nano setup.py
 scroll down to "JCC="
 edit "linux=" to java-11-openjdk-amd64
 ctrl+o ctrl+x
+
+In addition, some symlinks need to be created:
+
 sudo ln -s /usr/lib/jvm/java-11-openjdk-amd64/lib/libjava.so /usr/lib/libjava.so
 sudo ln -s /usr/lib/jvm/java-11-openjdk-amd64/lib/server/libjvm.so /usr/lib/libjvm.so
+
+Then, run these commands:
+
 python3 setup.py build
 sudo python3 setup.py install
+
+Before the final build, we need to edit the Makefile:
+
 cd ..
 nano Makefile
-scroll down to variables section and remove comments (doesnt matter which one)
-edit:
+scroll down to variables section and remove comments in one of the example configurations (doesnt matter which one)
+
+Make the following edits:
+
 PREFIX_PYTHON=/usr
 ANT=ant
 PYTHON=$(PREFIX_PYTHON)/bin/python
 JCC=$(PYTHON) -m jcc --shared
 NUM_FILES=10
 ctrl+o ctrl+x
+
+Now, you can run the final build:
+
 make
 sudo make test
 sudo make install
@@ -37,4 +57,4 @@ import lucene
 lucene.initVM()
 print(lucene.VERSION)
 
-if import doesnt work try running python3 as root (sudo)
+if the import doesnt work try running python3 as root (sudo)

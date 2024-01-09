@@ -8,7 +8,7 @@ from org.apache.lucene.store import MMapDirectory
 from org.apache.lucene.search import IndexSearcher
 from org.apache.lucene.search.similarities import BM25Similarity
 
-from customMoreLikeThis import customMoreLikeThis
+from customMinHash import LSHSingle, checkCandidates
 from utils import prune_unwanted
 
 
@@ -47,13 +47,16 @@ def run(searcher, analyzer, reader):
             else:
                 print()
                 break
-        mltq = customMoreLikeThis(scoreDocs[int(command) - 1].doc, analyzer, reader, 9, 4, 2, 60)
-        likeDocs = searcher.search(mltq, 21).scoreDocs
-        print("Relevant documents:")
-        # remove the first result, because it will be the game itself
-        for likeDoc in likeDocs[1:]:
-            doc = searcher.doc(likeDoc.doc)
-            print('     title:', doc.get("title"), "| id:", likeDoc.doc)
+        file = "mmh3_minhash_index"
+        title = searcher.doc(scoreDocs[int(command) - 1].doc).get("title")
+        can = LSHSingle(file, 128, 1000, title)
+        scores = checkCandidates(can, file)
+        top20 = sorted(scores, key=lambda x: x[2], reverse=True)[:20]
+        retrieved = []
+        for top in top20:
+            retrieved.append(top[1])
+        for i in range(len(retrieved)):
+            print("   ", retrieved[i])
 
 
 

@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 import time
+from Evaluator import Evaluator
 
 def shingle(text, k):
     shingles = ngrams(text, k, pad_right=True, right_pad_symbol="_")
@@ -121,6 +122,27 @@ def testEvalSingle(candidates,title):
             score+=1
     return score/truth
 
+def test_groundtruth(file, bands, bucketsize):
+    with open("groundtruth.json") as f_in:
+        groundtruth = json.load(f_in)
+    evaluator = Evaluator(groundtruth, 5)
+    for title in groundtruth:
+        try:
+            print(title)
+            can = LSHSingle(file, bands, bucketsize, title)
+            print(len(can))
+            scores = checkCandidates(can, file)
+            top20 = sorted(scores, key=lambda x: x[2], reverse=True)[:20]
+            retrieved = []
+            for top in top20:
+                retrieved.append(top[1])
+            #print(retrieved)
+            #print(groundtruth[title])
+            print(evaluator.evalSingle(title, retrieved))
+        except Exception as e:
+            print(e)
+    print(evaluator.finalEval())
+
 def createDataGraph(file):
     with open(file, 'rb') as file:
         signatures = pickle.load(file)
@@ -214,9 +236,13 @@ def demo():
     print("a run with 100 buckets gives: " + str(len(can2))+"potential candidates")
     print("a run with 1000 buckets gives: " + str(len(can3))+"potential candidates")
     print("a run with 10000 buckets gives: " + str(len(can4))+"potential candidates")
+
 if __name__ == "__main__":
     print("test")
-    demo()
+    #demo()
+
+    test_groundtruth("mmh3_minhash_index", 128, 1000)
+
     # createDataGraph("minhash_index")
     # can = LSH("minhash_index",8,100)
     # counter=0

@@ -1,4 +1,4 @@
-import sys, os, lucene, pickle
+import sys, os, lucene
 
 from java.nio.file import Paths
 from org.apache.lucene.analysis.en import EnglishAnalyzer

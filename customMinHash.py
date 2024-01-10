@@ -75,17 +75,19 @@ def LSHSingle(file,bands,bucketSize,title):
     bandSize=128/bands
     candidatePair=[]
     searchSig=signatures[title]
+    keys = list(signatures.keys())
     for x in range(bands):
         signatureIndex=(int(bandSize*x),int(bandSize*(x+1)))
         bandedSearchSig=searchSig[signatureIndex[0]:signatureIndex[1]]
         sum = np.sum(bandedSearchSig)
         hashIndexSearchSig = lshHashFunc(sum,bucketSize)
-        for key in signatures:
+        for key in keys:
             bandedSig=signatures[key][signatureIndex[0]:signatureIndex[1]]
             sum=np.sum(bandedSig)
             hashIndex=lshHashFunc(sum,bucketSize)
             if hashIndexSearchSig == hashIndex:
                 candidatePair.append((title,key))
+                keys.remove(key)
     setCandidate=set(candidatePair)
     setCandidate.remove((title,title))
     return setCandidate
@@ -96,6 +98,18 @@ def checkCandidates(candidatepairs,file):
     scores=[]
     for item in candidatepairs:
         score = minhash_sim(signatures[item[0]],signatures[item[1]])
+        if score == 0:
+            continue
+        pairScore=(item[0],item[1],score)
+        scores.append(pairScore)
+    return scores
+
+def jaccCandidates(candidatepairs, k):
+    with open("preprocessed_data", 'rb') as file:
+        terms = pickle.load(file)
+    scores=[]
+    for item in candidatepairs:
+        score = jaccard(terms[item[0]],terms[item[1]], k)
         if score == 0:
             continue
         pairScore=(item[0],item[1],score)
@@ -128,19 +142,29 @@ def test_groundtruth(file, bands, bucketsize):
     evaluator = Evaluator(groundtruth, 5)
     for title in groundtruth:
         try:
+            if "&" in title:
+                title = title.replace("&", "&amp;")
+            if title == "Zuma's Revenge":
+                title = "Zuma's Revenge!"
             print(title)
+            start = time.time()
             can = LSHSingle(file, bands, bucketsize, title)
+            print(time.time()-start)
             print(len(can))
-            scores = checkCandidates(can, file)
+            scores = jaccCandidates(can, 3)
             top20 = sorted(scores, key=lambda x: x[2], reverse=True)[:20]
             retrieved = []
             for top in top20:
                 retrieved.append(top[1])
             #print(retrieved)
             #print(groundtruth[title])
+            if "&amp;" in title:
+                title = title.replace("&amp;", "&")
+            if title == "Zuma's Revenge!":
+                title = "Zuma's Revenge"
             print(evaluator.evalSingle(title, retrieved))
         except Exception as e:
-            print(e)
+             print(e)
     print(evaluator.finalEval())
 
 def createDataGraph(file):
@@ -241,7 +265,7 @@ if __name__ == "__main__":
     print("test")
     #demo()
 
-    test_groundtruth("mmh3_minhash_index", 128, 1000)
+    test_groundtruth("sha1_minhash_index", 128, 10)
 
     # createDataGraph("minhash_index")
     # can = LSH("minhash_index",8,100)

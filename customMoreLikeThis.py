@@ -4,6 +4,7 @@ from org.apache.lucene.index import Term
 from org.apache.lucene.search import BooleanQuery, BooleanClause, TermQuery
 import math
 
+#based on org.apache.lucene.queries.mlt.MoreLikeThis
 
 def customMoreLikeThis(docId, analyzer, reader, maxLen, minTf, minDocFreq, noOfTerms):
     """

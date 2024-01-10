@@ -151,7 +151,7 @@ def test_groundtruth(file, bands, bucketsize):
             can = LSHSingle(file, bands, bucketsize, title)
             print(time.time()-start)
             print(len(can))
-            scores = jaccCandidates(can, 3)
+            scores = checkCandidates(can, file)
             top20 = sorted(scores, key=lambda x: x[2], reverse=True)[:20]
             retrieved = []
             for top in top20:
@@ -265,7 +265,7 @@ if __name__ == "__main__":
     print("test")
     #demo()
 
-    test_groundtruth("sha1_minhash_index", 128, 10)
+    test_groundtruth("mmh3_minhash_index", 128, 100)
 
     # createDataGraph("minhash_index")
     # can = LSH("minhash_index",8,100)

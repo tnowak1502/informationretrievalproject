@@ -172,7 +172,6 @@ def test_groundtruth(file, bands, bucketsize):
 def createDataGraph(file):
     with open(file,'rb') as file:
         pre = pickle.load(file)
-    #interValDict={"0-10":100,"10-20":80,"20-30":60,"30-40":40,"40-50":51,"50-60":22,"60-70":64,"70-80":20,"80-90":18,"90-100":3}
     interValDict={"0-10":0,"10-20":0,"20-30":0,"30-40":0,"40-50":0,"50-60":0,"60-70":0,"70-80":0,"80-90":0,"90-100":0}
     pre2=copy.deepcopy(pre)
     counter=0

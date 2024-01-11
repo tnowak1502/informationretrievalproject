@@ -11,7 +11,7 @@ from org.apache.lucene.search.similarities import BM25Similarity
 from customMinHash import LSHSingle, checkCandidates
 from utils import prune_unwanted
 
-
+#Based on SearchFiles.py from the the pylucene samples folder
 
 def run(searcher, analyzer, reader):
     """

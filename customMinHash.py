@@ -88,8 +88,6 @@ def LSHSingle(file,bands,bucketSize,title):
             hashIndex=lshHashFunc(sum,bucketSize)
             if hashIndexSearchSig == hashIndex:
                 candidatePair.append((title,key))
-                keys.remove(key)
-        print("test")
     setCandidate=set(candidatePair)
     setCandidate.remove((title,title))
     return setCandidate
@@ -170,16 +168,15 @@ def test_groundtruth(file, bands, bucketsize):
     print(evaluator.finalEval())
 
 def createDataGraph(file):
-    with open(file,'rb') as file:
-        pre = pickle.load(file)
+    with open(file, 'rb') as file:
+        signatures = pickle.load(file)
+    #interValDict={"0-10":100,"10-20":80,"20-30":60,"30-40":40,"40-50":51,"50-60":22,"60-70":64,"70-80":20,"80-90":18,"90-100":3}
     interValDict={"0-10":0,"10-20":0,"20-30":0,"30-40":0,"40-50":0,"50-60":0,"60-70":0,"70-80":0,"80-90":0,"90-100":0}
-    pre2=copy.deepcopy(pre)
-    counter=0
-    for x in pre:
-        for y in pre2:
+    signatures2=copy.deepcopy(signatures)
+    for x in signatures:
+        for y in signatures2:
             if x !=y:
-                score = jaccard(pre[x],pre[y],3)
-                #score=minhash_sim(signatures[x],signatures[y])
+                score=minhash_sim(signatures[x],signatures[y])
                 if 0 <= score < 0.1:
                     interValDict["0-10"] += 1
                 elif 0.1 <= score < 0.2:
@@ -200,9 +197,7 @@ def createDataGraph(file):
                     interValDict["80-90"] += 1
                 elif 0.9 <= score <= 1.0:
                     interValDict["90-100"] += 1
-        del pre2[x]
-        counter+=1
-        print(counter)
+        del signatures2[x]
     intervals = list(interValDict.keys())
     values = list(interValDict.values())
     plt.bar(intervals, values, color='blue',
@@ -211,50 +206,34 @@ def createDataGraph(file):
     plt.ylabel("Number of documents")
     plt.title("Number of documents in funciton of their similarity with eachother")
     plt.show()
+    plt.bar(intervals, values, color='blue',
+            width=0.8)
     plt.yscale("log")
     plt.ylabel("Number of documents(logscale)")
     plt.title("Number of documents in funciton of their similarity with eachother(logscale)")
     plt.show()
 
-def demo():
-    title = "Batman: The Telltale Series"
+def demo(title):
+    bands=[1,2,4,8,16]
+    buckets=[10,100,1000,10000]
+    print("-----")
+    print("running demo for: "+title+" with Sha1")
+    print("-----")
+    for band in bands:
+        for bucket in buckets:
+            can= LSHSingle("sha1_minhash_index", band, bucket,title)
+            print(str(band)+" bands and "+str(bucket)+" buckets gives "+str(len(can))+"candidate pairs")
+        print("-----Change bands-----")
 
-    #can3 = LSH("mmh3_minhash_index", 1, 100)
-    #can3 = LSH("sha1_minhash_index", 1, 100)
+    print("-----")
+    print("running demo for: "+title+" with mmh3")
+    print("-----")
+    for band in bands:
+        for bucket in buckets:
+            can= LSHSingle("mmh3_minhash_index", band, bucket,title)
+            print(str(band)+" bands and "+str(bucket)+" buckets gives "+str(len(can))+"candidate pairs")
+        print("-----Change bands-----")
 
-    #candidates single title different buckets
-    can1 = LSHSingle("sha1_minhash_index", 4, 10,title)
-    print("can1 done")
-    can2 = LSHSingle("sha1_minhash_index", 4, 100,title)
-    print("can2 done")
-    can3 = LSHSingle("sha1_minhash_index", 4, 1000,title)
-    print("can3 done")
-    can4 = LSHSingle("sha1_minhash_index", 4, 10000,title)
-    print("can4 done")
 
-    print("---------RUNS WITH variable buckets size and 4 bands---------")
-    print("a run with 10 buckets gives: " + str(len(can1))+"potential candidates")
-    print("a run with 100 buckets gives: " + str(len(can2))+"potential candidates")
-    print("a run with 1000 buckets gives: " + str(len(can3))+"potential candidates")
-    print("a run with 10000 buckets gives: " + str(len(can4))+"potential candidates")
-
-    #candidates single title different buckets
-    title = "Batman: The Telltale Series"
-    can1 = LSHSingle("mmh3_minhash_index", 4, 10,title)
-    print("can1 done")
-    can2 = LSHSingle("mmh3_minhash_index", 4, 100,title)
-    print("can2 done")
-    can3 = LSHSingle("mmh3_minhash_index", 4, 1000,title)
-    print("can3 done")
-    can4 = LSHSingle("mmh3_minhash_index", 4, 10000,title)
-    print("can4 done")
-
-    print("---------RUNS WITH variable buckets size and 4 bands---------")
-    print("a run with 10 buckets gives: " + str(len(can1))+"potential candidates")
-    print("a run with 100 buckets gives: " + str(len(can2))+"potential candidates")
-    print("a run with 1000 buckets gives: " + str(len(can3))+"potential candidates")
-    print("a run with 10000 buckets gives: " + str(len(can4))+"potential candidates")
 if __name__ == "__main__":
-    print("test")
-    # demo()
-    createDataGraph("preprocessed_data")
+    demo("Batman: The Telltale Series")

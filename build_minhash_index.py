@@ -64,5 +64,5 @@ if __name__ == "__main__":
         signatures[title] = sig
 
     # Store all minhash signatures as a pickled dictionary
-    with open("mmh3_minhash_index", "wb") as file:
+    with open("mmh3_minhash_index128", "wb") as file:
         pickle.dump(signatures, file)

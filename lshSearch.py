@@ -47,7 +47,7 @@ def run(searcher, analyzer, reader):
             else:
                 print()
                 break
-        file = "mmh3_minhash_index"
+        file = "mmh3_minhash_index128"
         title = searcher.doc(scoreDocs[int(command) - 1].doc).get("title")
         can = LSHSingle(file, 128, 100, title)
         scores = checkCandidates(can, file)

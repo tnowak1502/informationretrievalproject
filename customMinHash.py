@@ -220,7 +220,7 @@ def demo(title):
     print("-----")
     for band in bands:
         for bucket in buckets:
-            can= LSHSingle("sha1_minhash_index", band, bucket,title)
+            can= LSHSingle("sha1_minhash_index128", band, bucket, title)
             print(str(band)+" bands and "+str(bucket)+" buckets gives "+str(len(can))+"candidate pairs")
         print("-----Change bands-----")
 
@@ -229,7 +229,7 @@ def demo(title):
     print("-----")
     for band in bands:
         for bucket in buckets:
-            can= LSHSingle("mmh3_minhash_index", band, bucket,title)
+            can= LSHSingle("mmh3_minhash_index128", band, bucket, title)
             print(str(band)+" bands and "+str(bucket)+" buckets gives "+str(len(can))+"candidate pairs")
         print("-----Change bands-----")
 

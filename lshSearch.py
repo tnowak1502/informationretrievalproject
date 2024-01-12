@@ -49,7 +49,7 @@ def run(searcher, analyzer, reader):
                 break
         file = "mmh3_minhash_index"
         title = searcher.doc(scoreDocs[int(command) - 1].doc).get("title")
-        can = LSHSingle(file, 128, 1000, title)
+        can = LSHSingle(file, 128, 100, title)
         scores = checkCandidates(can, file)
         top20 = sorted(scores, key=lambda x: x[2], reverse=True)[:20]
         retrieved = []

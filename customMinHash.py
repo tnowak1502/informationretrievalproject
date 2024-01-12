@@ -1,7 +1,6 @@
 import copy
 import pickle
 
-import pandas as pd
 from nltk import ngrams
 import numpy as np
 import matplotlib.pyplot as plt
